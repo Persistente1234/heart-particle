@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>soy tu mayor pesadilla</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Parisienne:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      font-family: 'Parisienne', cursive;
+    }
+
+    /* Contador de accesos */
+    #accessCounter {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #ff99cc;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      border: 1px solid #ff66cc;
+      box-shadow: 0 0 8px rgba(255, 102, 204, 0.6);
+      font-family: Georgia, serif;
+      pointer-events: none;
+    }
+
+    #previewCanvas {
+      position: fixed;
+      inset: 0;
+      filter: blur(12px) brightness(0.7);
+      opacity: 0.9;
+      z-index: 1;
+    }
+
+    #inicio {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      background: rgba(10, 4, 10, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 1.2s ease, visibility 1.2s ease;
+      pointer-events: all;
+    }
+
+    #inicio h1 {
+      color: #ff99cc;
+      font-size: clamp(2rem, 6vw, 4rem);
+      text-shadow:
+        0 0 12px rgba(255, 153, 204, 0.9),
+        0 0 24px rgba(255, 102, 178, 0.7);
+      margin-bottom: 2rem;
+      text-align: center;
+      z-index: 20;
+    }
+
+    #inicio button {
+      background: rgba(255, 51, 102, 0.35);
+      color: #ffddff;
+      border: 2px solid #ff66cc;
+      padding: 1rem 2.8rem;
+      font-size: clamp(1.3rem, 4.5vw, 2rem);
+      font-family: 'Parisienne', cursive;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      backdrop-filter: blur(6px);
+      z-index: 20;
+      box-shadow: 0 0 20px rgba(255, 102, 204, 0.5);
+    }
+
+    #inicio button:hover {
+      background: rgba(255, 51, 102, 0.55);
+      transform: scale(1.08);
+      box-shadow: 0 0 30px rgba(255, 102, 204, 0.8);
+    }
+
+    .floating-heart {
+      position: absolute;
+      color: rgba(255, 102, 204, 0.3);
+      font-size: clamp(1rem, 3vw, 2rem);
+      z-index: 5;
+      animation: float 15s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20vh) rotate(10deg); }
+    }
+
+    canvas.webgl {
+      position: fixed;
+      inset: 0;
+      outline: none;
+      cursor: grab;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+      z-index: 2;
+    }
+
+    canvas.webgl:active {
+      cursor: grabbing;
+    }
+
+    .creditos {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffccff;
+      font-size: clamp(1rem, 2.8vw, 1.4rem);
+      text-align: center;
+      z-index: 10;
+      text-shadow:
+        0 0 8px rgba(255, 153, 204, 0.8),
+        0 0 16px rgba(255, 153, 204, 0.5);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      font-weight: 700;
+    }
+
+    #bloqueo {
+      position: fixed;
+      inset: 0;
+      background: #0a0010;
+      display: none; /* oculto por defecto */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      text-align: center;
+      padding: 2rem;
+      color: #ffccff;
+      font-family: Georgia, serif;
+    }
+
+    #bloqueo h2 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 12px #ff66cc, 0 0 24px #ff3366;
+    }
+
+    #bloqueo p {
+      font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    #bloqueo a {
+      background: rgba(255, 51, 102, 0.45);
+      color: white;
+      text-decoration: none;
+      padding: 0.9rem 2rem;
+      border-radius: 50px;
+      font-weight: bold;
+      font-family: Georgia, serif;
+      border: 2px solid #ff66cc;
+      box-shadow: 0 0 18px rgba(255, 102, 204, 0.7);
+      transition: all 0.35s ease;
+    }
+
+    #bloqueo a:hover {
+      background: rgba(255, 51, 102, 0.75);
+      transform: scale(1.07);
+      box-shadow: 0 0 30px rgba(255, 102, 204, 0.95);
+    }
+  </style>
+</head>
+<body>
+  <div id="accessCounter">Accesos: 0 / 8</div>
+
+  <canvas id="previewCanvas"></canvas>
+
+  <div id="inicio">
+    <h1>Corazones para ti
+        CREADOR VIC 💜 PERSI      💖</h1>
+    <button id="startBtn">Aplasta acá</button>
+  </div>
+
+  <canvas class="webgl"></canvas>
+  <div class="creditos">By: 𖤍VIC 💜 PERSI𖤍</div>
+
+  <div id="bloqueo">
+    <h2>🔒 Acceso Expirado</h2>
+    <p>Este archivo fue destinado a ser visto <strong>solo 8 veces</strong>.</p>
+    <p>Ya has alcanzado tu límite de visualizaciones.</p>
+    <a href="https://wa.me/qr/GEELF4EW2PWRL1" target="_blank">Contactar a 𖤍VIC 💜 PERSI𖤍</a>
+  </div>
+
+  <!-- Shaders -->
+  <script type="x-shader/x-vertex" id="vertexShader">
+    #define M_PI 3.1415926535897932384626433832795
+    uniform float uTime;
+    uniform float uSize;
+    attribute float aScale;
+    attribute vec3 aColor;
+    attribute float random;
+    attribute float random1;
+    attribute float aSpeed;
+    varying vec3 vColor;
+    varying vec2 vUv;
+
+    void main() {
+      float sign = 2.0 * (step(random, 0.5) - 0.5);
+      float t = sign * mod(-uTime * aSpeed * 0.005 + 10.0 * aSpeed * aSpeed, M_PI);
+      float a = pow(t, 2.0) * pow((t - sign * M_PI), 2.0);
+      float radius = 0.08;
+      vec3 myOffset = vec3(
+        radius * 16.0 * pow(sin(t), 2.0) * sin(t),
+        radius * (13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t)),
+        0.15 * (a * (random1 - 0.5)) * sin(abs(10.0 * (sin(0.2 * uTime + 0.2 * random))) * t)
+      );
+      vec4 modelPosition = modelMatrix * vec4(myOffset, 1.0);
+      vec4 viewPosition = viewMatrix * modelPosition;
+      viewPosition.xyz += position * aScale * uSize * pow(a, 0.5) * 0.5;
+      gl_Position = projectionMatrix * viewPosition;
+      vColor = aColor;
+      vUv = uv;
+    }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentShader">
+    varying vec3 vColor;
+    varying vec2 vUv;
+    void main() {
+      vec2 uv = vUv;
+      vec3 color = vColor;
+      float strength = distance(uv, vec2(0.5));
+      strength *= 2.0;
+      strength = 1.0 - strength;
+      gl_FragColor = vec4(strength * color, 1.0);
+    }
+  </script>
+
+  <script type="x-shader/x-vertex" id="vertexShaderSparks">
+    #define M_PI 3.1415926535897932384626433832795
+    uniform float uTime;
+    uniform float uSize;
+    attribute float aScale;
+    attribute vec3 aColor;
+    attribute float phi;
+    attribute float random;
+    attribute float random1;
+    varying vec3 vColor;
+    varying vec2 vUv;
+
+    void main() {
+      float t = mod((-uTime + 100.0) * 0.06 * random1 + random * 2.0 * M_PI, 2.0 * M_PI);
+      float angle = phi;
+      vec3 myOffset = vec3(
+        5.85 * cos(angle * t),
+        2.0 * (t - M_PI),
+        3.0 * sin(angle * t / (t + 0.1))
+      );
+      vec4 modelPosition = modelMatrix * vec4(myOffset, 1.0);
+      vec4 viewPosition = viewMatrix * modelPosition;
+      viewPosition.xyz += position * aScale * uSize;
+      gl_Position = projectionMatrix * viewPosition;
+      vColor = aColor;
+      vUv = uv;
+    }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentShaderSparks">
+    uniform sampler2D uTex;
+    varying vec3 vColor;
+    varying vec2 vUv;
+    void main() {
+      vec2 uv = vUv;
+      vec3 color = vColor;
+      float strength = distance(uv, vec2(0.5, 0.65));
+      strength *= 2.0;
+      strength = 1.0 - strength;
+      vec3 texture = texture2D(uTex, uv).rgb;
+      gl_FragColor = vec4(texture * color * (strength + 0.3), 1.0);
+    }
+  </script>
+
+  <!-- Script principal SIN type="module" para evitar problemas de scope y carga -->
+  <script>
+    // ✅ Configuración de accesos
+    const accessCountKey = 'heart_access_count_v3';
+    let accessCount = parseInt(localStorage.getItem(accessCountKey)) || 0;
+    const maxAccess = 6;
+
+    const counterEl = document.getElementById('accessCounter');
+    const bloqueoScreen = document.getElementById('bloqueo');
+    const inicioScreen = document.getElementById('inicio');
+    const startBtn = document.getElementById('startBtn');
+
+    // Actualizar contador
+    counterEl.textContent = `Accesos: ${accessCount} / ${maxAccess}`;
+
+    if (accessCount >= maxAccess) {
+      // Bloquear todo
+      inicioScreen.style.display = 'none';
+      document.getElementById('previewCanvas').style.display = 'none';
+      document.querySelector('canvas.webgl').style.display = 'none';
+      document.querySelector('.creditos').style.display = 'none';
+      bloqueoScreen.style.display = 'flex';
+    } else {
+      // Registrar el acceso SOLO cuando se haga clic (no al cargar)
+      startBtn.addEventListener('click', async () => {
+        // Incrementar y guardar
+        accessCount++;
+        localStorage.setItem(accessCountKey, accessCount);
+        counterEl.textContent = `Accesos: ${accessCount} / ${maxAccess}`;
+
+        // Intentar reproducir audio (puede fallar, pero no detiene la escena)
+        const audio = new Audio("https://files.catbox.moe/qcwt9h.mp3");
+        audio.loop = true;
+        try {
+          await audio.play();
+        } catch (e) {
+          console.warn("Audio autoplay blocked, but scene will load.");
+        }
+
+        // Ocultar pantalla de inicio
+        inicioScreen.style.opacity = "0";
+        inicioScreen.style.pointerEvents = "none";
+
+        // Mostrar canvas 3D
+        const mainCanvas = document.querySelector("canvas.webgl");
+        mainCanvas.style.opacity = "1";
+
+        // Cargar Three.js dinámicamente
+        try {
+          const THREE = await import("https://cdn.skypack.dev/three@0.135.0");
+          const { GLTFLoader } = await import("https://cdn.skypack.dev/three@0.135.0/examples/jsm/loaders/GLTFLoader");
+          const { TextGeometry } = await import("https://cdn.skypack.dev/three@0.135.0/examples/jsm/geometries/TextGeometry.js");
+          const { FontLoader } = await import("https://cdn.skypack.dev/three@0.135.0/examples/jsm/loaders/FontLoader.js");
+
+          // ✅ Aquí va toda la lógica de HeartScene (igual que antes)
+          class HeartScene {
+            constructor(canvas, isPreview = false) {
+              this.isPreview = isPreview;
+              this.scene = new THREE.Scene();
+              this.scene.background = new THREE.Color(0x000000);
+              this.clock = new THREE.Clock();
+
+              const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+              this.scene.add(ambientLight);
+
+              this.directionalLight = new THREE.DirectionalLight(0xff66cc, 1);
+              this.directionalLight.position.set(5, 5, 5);
+              this.scene.add(this.directionalLight);
+
+              this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+              this.camera.position.set(0, 0, 4.5);
+              this.scene.add(this.camera);
+
+              this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+              this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+              this.renderer.setSize(window.innerWidth, window.innerHeight);
+              this.renderer.setClearColor(0x000000, 0);
+
+              if (!isPreview) {
+                this.rotation = { x: 0, y: 0 };
+                this.isDragging = false;
+                this.previousMouse = { x: 0, y: 0 };
+                this.cameraSequence = null;
+                this.sequenceTime = 0;
+                this.orbitMode = false;
+                this.setupControls();
+                this.handleResize();
+              }
+
+              this.init();
+              if (isPreview) {
+                this.renderPreview();
+              } else {
+                this.animate();
+              }
+            }
+
+            init() {
+              this.mainGroup = new THREE.Group();
+              this.scene.add(this.mainGroup);
+
+              this.loadCentralHeart();
+              this.createHeartParticles();
+              this.createFullSkySparks();
+              if (!this.isPreview) {
+                this.createLoveText();
+              }
+            }
+
+            loadCentralHeart() {
+              const loader = new GLTFLoader();
+              loader.load(
+                "https://assets.codepen.io/74321/heart.glb",
+                (gltf) => {
+                  this.centralHeart = gltf.scene.children[0];
+                  this.centralHeart.scale.set(0.25, 0.25, 0.25);
+                  const matcapTexture = new THREE.TextureLoader().load("https://assets.codepen.io/74321/3.png");
+                  this.centralHeart.material = new THREE.MeshMatcapMaterial({
+                    matcap: matcapTexture,
+                    color: 0xff3366,
+                    transparent: true,
+                    opacity: 1
+                  });
+                  this.mainGroup.add(this.centralHeart);
+                },
+                undefined,
+                (error) => console.error("Error loading central heart:", error)
+              );
+            }
+
+            createLoveText() {
+              const loader = new FontLoader();
+              loader.load('https://cdn.jsdelivr.net/npm/three@0.135.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                const textGeo = new TextGeometry('TE AMO', {
+                  font: font,
+                  size: 0.45,
+                  height: 0.12,
+                  curveSegments: 12,
+                  bevelEnabled: true,
+                  bevelThickness: 0.04,
+                  bevelSize: 0.03,
+                  bevelSegments: 5
+                });
+
+                textGeo.center();
+                const textMaterial = new THREE.MeshPhongMaterial({
+                  color: 0xff3366,
+                  emissive: 0xff66cc,
+                  emissiveIntensity: 0.5,
+                  specular: 0xffffff,
+                  shininess: 120,
+                  transparent: true,
+                  opacity: 0.98
+                });
+
+                this.loveText = new THREE.Mesh(textGeo, textMaterial);
+                this.loveText.position.y = 1.25;
+                this.mainGroup.add(this.loveText);
+              });
+            }
+
+            createHeartParticles() {
+              const count = this.isPreview ? 1500 : 4500;
+              const geometry = new THREE.InstancedBufferGeometry();
+              const baseGeo = new THREE.PlaneGeometry(1, 1);
+              Object.keys(baseGeo.attributes).forEach(key => {
+                geometry.setAttribute(key, baseGeo.attributes[key]);
+              });
+              geometry.index = baseGeo.index;
+
+              const scales = new Float32Array(count);
+              const colors = new Float32Array(count * 3);
+              const speeds = new Float32Array(count);
+              const randoms = new Float32Array(count);
+              const randoms1 = new Float32Array(count);
+              const colorChoices = [0xff66cc, 0xff99ff, 0xffccff, 0xff3366, 0xffffff];
+
+              for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                randoms[i] = Math.random();
+                randoms1[i] = Math.random();
+                scales[i] = Math.random() * (this.isPreview ? 0.2 : 0.35);
+                const color = new THREE.Color(colorChoices[Math.floor(Math.random() * colorChoices.length)]);
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+                speeds[i] = Math.random() * (12.5 * Math.PI);
+              }
+
+              geometry.setAttribute("aScale", new THREE.InstancedBufferAttribute(scales, 1));
+              geometry.setAttribute("aColor", new THREE.InstancedBufferAttribute(colors, 3));
+              geometry.setAttribute("random", new THREE.InstancedBufferAttribute(randoms, 1));
+              geometry.setAttribute("random1", new THREE.InstancedBufferAttribute(randoms1, 1));
+              geometry.setAttribute("aSpeed", new THREE.InstancedBufferAttribute(speeds, 1));
+
+              const heartMaterial = new THREE.ShaderMaterial({
+                vertexShader: document.getElementById("vertexShader").textContent,
+                fragmentShader: document.getElementById("fragmentShader").textContent,
+                uniforms: {
+                  uTime: { value: this.isPreview ? 5 : 0 },
+                  uSize: { value: this.isPreview ? 0.18 : 0.22 }
+                },
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                transparent: true
+              });
+
+              this.particleHeart = new THREE.Mesh(geometry, heartMaterial);
+              this.mainGroup.add(this.particleHeart);
+            }
+
+            createFullSkySparks() {
+              const count = this.isPreview ? 800 : 2500;
+              const geometry = new THREE.BufferGeometry();
+              const positions = new Float32Array(count * 3);
+              const colors = new Float32Array(count * 3);
+              const colorChoices = [0xff66cc, 0xff99ff, 0xffccff, 0xffffff];
+
+              for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const radius = 30 + Math.random() * 50;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i3 + 2] = radius * Math.cos(phi);
+
+                const color = new THREE.Color(colorChoices[Math.floor(Math.random() * colorChoices.length)]);
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+              }
+
+              geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+              geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+              const sparkMaterial = new THREE.PointsMaterial({
+                size: this.isPreview ? 0.08 : 0.12,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+              });
+
+              this.skySparks = new THREE.Points(geometry, sparkMaterial);
+              this.scene.add(this.skySparks);
+            }
+
+            renderPreview() {
+              this.renderer.render(this.scene, this.camera);
+            }
+
+            setupControls() {
+              const canvas = this.renderer.domElement;
+
+              const onMouseDown = (e) => {
+                this.isDragging = true;
+                this.previousMouse.x = e.clientX;
+                this.previousMouse.y = e.clientY;
+                canvas.style.cursor = 'grabbing';
+                this.cameraSequence = null;
+                this.orbitMode = false;
+              };
+
+              const onMouseMove = (e) => {
+                if (!this.isDragging) return;
+                const deltaX = e.clientX - this.previousMouse.x;
+                const deltaY = e.clientY - this.previousMouse.y;
+                this.rotation.y += deltaX * 0.01;
+                this.rotation.x += deltaY * 0.01;
+                this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+                this.previousMouse.x = e.clientX;
+                this.previousMouse.y = e.clientY;
+              };
+
+              const onMouseUp = () => {
+                this.isDragging = false;
+                canvas.style.cursor = 'grab';
+              };
+
+              const onWheel = (e) => {
+                if (!this.cameraSequence && !this.orbitMode) {
+                  const zoomSpeed = 0.005;
+                  const newZ = this.camera.position.z + e.deltaY * zoomSpeed;
+                  this.camera.position.z = Math.max(1.5, Math.min(30, newZ));
+                }
+              };
+
+              const onTouchStart = (e) => {
+                if (e.touches.length === 1) {
+                  this.isDragging = true;
+                  this.previousMouse.x = e.touches[0].clientX;
+                  this.previousMouse.y = e.touches[0].clientY;
+                }
+              };
+
+              const onTouchMove = (e) => {
+                if (!this.isDragging || e.touches.length !== 1) return;
+                const deltaX = e.touches[0].clientX - this.previousMouse.x;
+                const deltaY = e.touches[0].clientY - this.previousMouse.y;
+                this.rotation.y += deltaX * 0.01;
+                this.rotation.x += deltaY * 0.01;
+                this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+                this.previousMouse.x = e.touches[0].clientX;
+                this.previousMouse.y = e.touches[0].clientY;
+              };
+
+              const onTouchEnd = () => {
+                this.isDragging = false;
+              };
+
+              canvas.addEventListener('mousedown', onMouseDown);
+              window.addEventListener('mousemove', onMouseMove);
+              window.addEventListener('mouseup', onMouseUp);
+              canvas.addEventListener('wheel', onWheel, { passive: false });
+
+              canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+              canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+              canvas.addEventListener('touchend', onTouchEnd);
+            }
+
+            startCinematicSequence() {
+              this.cameraSequence = 'zoomOut';
+              this.sequenceTime = 0;
+              this.orbitMode = false;
+            }
+
+            updateCameraSequence(delta) {
+              this.sequenceTime += delta;
+
+              if (this.cameraSequence === 'zoomOut') {
+                if (this.sequenceTime < 4) {
+                  const t = this.sequenceTime / 4;
+                  this.camera.position.z = 4.5 + (35 - 4.5) * t;
+                } else {
+                  this.cameraSequence = 'zoomToText';
+                  this.sequenceTime = 0;
+                }
+              }
+              else if (this.cameraSequence === 'zoomToText') {
+                if (this.sequenceTime < 3) {
+                  const t = this.sequenceTime / 3;
+                  this.camera.position.z = 35 - (35 - 2.8) * t;
+                } else {
+                  this.cameraSequence = 'showHeart';
+                  this.sequenceTime = 0;
+                }
+              }
+              else if (this.cameraSequence === 'showHeart') {
+                if (this.sequenceTime < 2.5) {
+                  const t = this.sequenceTime / 2.5;
+                  this.camera.position.z = 2.8 + (7 - 2.8) * t;
+                } else {
+                  this.cameraSequence = 'return';
+                  this.sequenceTime = 0;
+                }
+              }
+              else if (this.cameraSequence === 'return') {
+                if (this.sequenceTime < 2) {
+                  const t = this.sequenceTime / 2;
+                  this.camera.position.z = 7 - (7 - 4.5) * t;
+                } else {
+                  this.cameraSequence = null;
+                  this.orbitMode = true;
+                  return;
+                }
+              }
+
+              this.camera.lookAt(0, 0, 0);
+            }
+
+            animate = () => {
+              const delta = Math.min(this.clock.getDelta(), 0.1);
+              const elapsedTime = this.clock.getElapsedTime();
+
+              if (this.cameraSequence) {
+                this.updateCameraSequence(delta);
+              }
+
+              if (this.isDragging) {
+                this.mainGroup.rotation.x = this.rotation.x;
+                this.mainGroup.rotation.y = this.rotation.y;
+              } else {
+                if (this.orbitMode) {
+                  this.mainGroup.rotation.y += 0.0025;
+                } else if (!this.cameraSequence) {
+                  this.mainGroup.rotation.y += 0.001;
+                }
+              }
+
+              if (!this.cameraSequence && !this.orbitMode && !this.isDragging) {
+                this.camera.position.z = 4.5;
+              }
+
+              this.camera.lookAt(0, 0, 0);
+
+              if (this.particleHeart && this.particleHeart.material.uniforms) {
+                this.particleHeart.material.uniforms.uTime.value = elapsedTime;
+              }
+
+              this.renderer.render(this.scene, this.camera);
+              requestAnimationFrame(this.animate);
+            };
+
+            handleResize() {
+              window.addEventListener("resize", () => {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+              });
+            }
+          }
+
+          // Crear escena principal
+          const heartScene = new HeartScene(mainCanvas);
+
+          // Iniciar secuencia después de un breve retraso
+          setTimeout(() => {
+            if (heartScene) heartScene.startCinematicSequence();
+          }, 600);
+
+          // Crear corazones decorativos
+          function createDecorHearts() {
+            const container = document.body;
+            for (let i = 0; i < 12; i++) {
+              const heart = document.createElement("div");
+              heart.classList.add("floating-heart");
+              heart.innerHTML = "❤";
+              heart.style.left = `${Math.random() * 100}%`;
+              heart.style.top = `${Math.random() * 100}%`;
+              heart.style.animationDelay = `${Math.random() * 15}s`;
+              heart.style.fontSize = `${0.8 + Math.random() * 1.5}rem`;
+              container.appendChild(heart);
+            }
+          }
+          createDecorHearts();
+
+        } catch (error) {
+          console.error("Error al cargar la escena:", error);
+          alert("Hubo un problema al cargar la experiencia. Por favor, recarga la página.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
